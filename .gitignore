@@ -9,7 +9,7 @@ __pycache__/
 venv/
 
 # SQLite database
-app.db
+medical_app.db
 
 # Environment files
 .env
