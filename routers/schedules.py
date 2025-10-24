@@ -34,19 +34,33 @@ def schedule_or_404(session:Session, doctor_id:int) -> DoctorSchedule:
 
 def validate_time(start:time, end:time) -> None:
     if start >= end:
-        raise HTTPException(status_code=404, detail="Start time must be earlier than end time")
+        raise HTTPException(status_code=409, detail="Start time must be earlier than end time")
 
-def schedule_overlap(session:Session, doctor_id:int, start:time, end:time, weekday:int, exclude_id:Optional[int]=None ) -> bool:
-    query = select(DoctorSchedule).where(
-        DoctorSchedule.doctor_id == doctor_id,
-        DoctorSchedule.weekday == weekday,
-        DoctorSchedule.start_time > end,
-        DoctorSchedule.end_time < start
+def schedule_overlap(
+    session: Session,
+    doctor_id: int,
+    start: time,
+    end: time,
+    weekday: int,
+    exclude_id: Optional[int] = None,
+) -> bool:
+    """
+    Returns True if ANY existing weekly slot overlaps [start, end) on the same weekday.
+    Touching endpoints (end == start) are allowed (no overlap).
+    """
+    q = (
+        select(DoctorSchedule)
+        .where(
+            DoctorSchedule.doctor_id == doctor_id,
+            DoctorSchedule.weekday == weekday,
+            DoctorSchedule.start_time < end,   # existing starts before the new ends
+            DoctorSchedule.end_time > start,   # existing ends after the new starts
+        )
     )
-    if exclude_id:
-        query = query.where(DoctorSchedule.id != exclude_id)
-    existing = session.exec(query).first()
-    return existing is not None
+    if exclude_id is not None:
+        q = q.where(DoctorSchedule.id != exclude_id)
+
+    return session.exec(q).first() is not None
 
 @router.get("/{doctor_id}/schedules", response_model=List[DoctorSchedule])
 def get_doctor_schedules(doctor_id:int):
