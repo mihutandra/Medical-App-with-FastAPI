@@ -7,6 +7,7 @@ from sqlalchemy import Column, CheckConstraint, Index, Numeric, UniqueConstraint
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.sql.sqltypes import DateTime, Time
 from sqlmodel import Field, Relationship, SQLModel
+import re
 
 
 class AppointmentStatus(str, Enum):
@@ -101,3 +102,18 @@ class DoctorSchedule(SQLModel, table=True):
     end_time: time = Field(sa_column=Column(Time, nullable=False))
 
     doctor: "Doctor" = Relationship(back_populates="schedules")
+    
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def enforce_hhmm_format(cls, value):
+        if isinstance(value, time):
+            return value.replace(second=0, microsecond=0)
+
+        if isinstance(value, str):
+            # Accept only "HH:MM"
+            if not re.fullmatch(r"^(?:[01]\d|2[0-3]):[0-5]\d$", value):
+                raise ValueError("Time must be in HH:MM format (no seconds)")
+            hour, minute = map(int, value.split(":"))
+            return time(hour, minute)
+
+        raise ValueError("Invalid time format. Must be 'HH:MM'.")

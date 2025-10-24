@@ -14,49 +14,20 @@ class ScheduleCreate(SQLModel):
     start_time: time
     end_time: time
 
-    # @field_validator("start_time", "end_time", mode="before")
-    # @classmethod
-    # def validate_time_format(cls, value):
-    #     """
-    #     Accept only HH:MM (no seconds) and convert to time object.
-    #     """
-    #     if isinstance(value, time):
-    #         return value
-    #     if isinstance(value, str):
-    #         # Match pattern HH:MM (24h)
-    #         if not re.fullmatch(r"^(?:[01]\d|2[0-3]):[0-5]\d$", value):
-    #             raise ValueError("Time must be in HH:MM format (no seconds)")
-    #         hour, minute = map(int, value.split(":"))
-    #         return time(hour, minute)
-    #     raise ValueError("Invalid time format. Must be 'HH:MM'.")
 
 class ScheduleUpdate(SQLModel):
     weekday: Optional[int] = Field(default=None, ge=0, le=6)
     start_time: Optional[time] = None
     end_time: Optional[time] = None
 
-    # @field_validator("start_time", "end_time", mode="before")
-    # @classmethod
-    # def validate_time_format(cls, value):
-    #     if value is None:
-    #         return value
-    #     if isinstance(value, time):
-    #         return value
-    #     if isinstance(value, str):
-    #         if not re.fullmatch(r"^(?:[01]\d|2[0-3]):[0-5]\d$", value):
-    #             raise ValueError("Time must be in HH:MM format (no seconds)")
-    #         hour, minute = map(int, value.split(":"))
-    #         return time(hour, minute)
-    #     raise ValueError("Invalid time format. Must be 'HH:MM'.")
-    
 def doctor_or_404(session:Session, doctor_id:int) -> Doctor:
-    doc = session.get(doctor_id)
+    doc = session.get(Doctor, doctor_id)
     if not doc:
         raise HTTPException(status_code=404, detail='Doctor not found')
     return doc
 
 def schedule_or_404(session:Session, doctor_id:int) -> DoctorSchedule:
-    sch = session.get(doctor_id)
+    sch = session.get(DoctorSchedule, doctor_id)
     if not sch:
         raise HTTPException(status_code=404, detail="Schedule not found")
     return sch
