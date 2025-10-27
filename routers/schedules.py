@@ -2,7 +2,7 @@ from datetime import time
 from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import field_validator
+from pydantic import field_validator, BaseModel
 from sqlmodel import SQLModel, Field, Session, select
 
 from db.session import engine
@@ -19,6 +19,11 @@ class ScheduleUpdate(SQLModel):
     weekday: Optional[int] = Field(default=None, ge=0, le=6)
     start_time: Optional[time] = None
     end_time: Optional[time] = None
+
+class ScheduleOut(SQLModel):
+    weekday: str
+    start_time: str
+    end_time: str
 
 def doctor_or_404(session:Session, doctor_id:int) -> Doctor:
     doc = session.get(Doctor, doctor_id)
@@ -62,11 +67,20 @@ def schedule_overlap(
 
     return session.exec(q).first() is not None
 
-@router.get("/{doctor_id}/schedules", response_model=List[DoctorSchedule])
+@router.get("/{doctor_id}/schedules", response_model=list[ScheduleOut])
 def get_doctor_schedules(doctor_id:int):
     with Session(engine) as session:
         doctor = doctor_or_404(session, doctor_id)
-        return doctor.schedules
+        schedules = doctor.schedules
+        schedules.sort(key=lambda x: x.weekday)
+        result = [] 
+        for s in schedules:
+            result.append(ScheduleOut(
+                weekday=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][s.weekday],
+                start_time=s.start_time.strftime("%H:%M"),
+                end_time=s.end_time.strftime("%H:%M"),
+            ))
+        return result
     
 @router.post(
     "/{doctor_id}/schedules",
