@@ -39,7 +39,7 @@ def get_patient_by_id(patient_id: int):
 @router.patch("/{patient_id}", response_model=Patient)
 def update_patient(patient_id: int, payload: PatientUpdate):
     """
-    Partial update (PATCH). Only updates fields provided in the payload.
+    Partial update. Only updates fields provided in the payload.
     """
     with Session(engine) as session:
         patient = session.get(Patient, patient_id)
@@ -63,8 +63,8 @@ def update_patient(patient_id: int, payload: PatientUpdate):
 @router.put("/{patient}", response_model=Patient, status_code=status.HTTP_200_OK)
 def replace_patient(patient_id: int, replacement: Patient) -> Patient:
     """
-    Full update (PUT). Replaces all updatable fields of the existing patient
-    with the values from `replacement`. The `id` in path wins.
+    Full update. Replaces all updatable fields of the existing patient
+    with the values from `replacement`.
     """
     with Session(engine) as session:
         pat = session.get(Patient, patient_id)

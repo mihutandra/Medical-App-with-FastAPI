@@ -55,7 +55,7 @@ def get_doctors_by_specialty(doctor_specialty: str):
 @router.patch("/{doctor_id}", response_model=Doctor, status_code=status.HTTP_200_OK)
 def update_doctor(doctor_id: int, payload: DoctorUpdate):
     """
-    Partial update (PATCH). Only updates fields provided in the payload.
+    Partial update. Only updates fields provided in the payload.
     """
     with Session(engine) as session:
         doc = session.get(Doctor, doctor_id)
@@ -81,8 +81,7 @@ def update_doctor(doctor_id: int, payload: DoctorUpdate):
 @router.put("/{doctor_id}", response_model=Doctor, status_code=status.HTTP_200_OK)
 def replace_doctor(doctor_id: int, replacement: Doctor) -> Doctor:
     """
-    Full update (PUT). Replaces all updatable fields of the existing doctor
-    with the values from `replacement`. The `id` in path wins.
+    Full update. Replaces all updatable fields of the existing doctor with the values from `replacement`.
     """
     with Session(engine) as session:
         doc = session.get(Doctor, doctor_id)
@@ -105,7 +104,6 @@ def replace_doctor(doctor_id: int, replacement: Doctor) -> Doctor:
 def delete_doctor(doctor_id: int) -> None:
     """
     Delete a doctor. By default we block deletion if the doctor has FUTURE scheduled appointments.
-    Change behavior if you prefer hard delete regardless.
     """
     with Session(engine) as session:
         doc = session.get(Doctor, doctor_id)

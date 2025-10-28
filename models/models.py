@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List
@@ -14,7 +14,6 @@ class AppointmentStatus(str, Enum):
     scheduled = "scheduled"
     cancelled = "cancelled"
     completed = "completed"
-
 
 class Doctor(SQLModel, table=True):
     __tablename__ = "doctor"
@@ -68,16 +67,18 @@ class Patient(SQLModel, table=True):
 class Appointment(SQLModel, table=True):
     __tablename__ = "appointments"
     __table_args__ = (
-        Index("ix_appt_doctor_dt", "doctor_id", "appointment_datetime"),
-        Index("ix_appt_patient_dt", "patient_id", "appointment_datetime"),
+        Index("ix_appt_doctor_dt", "doctor_id", "appointment_date", "start_time"),
+        Index("ix_appt_patient_dt", "patient_id", "appointment_date", "start_time"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     doctor_id: int = Field(foreign_key="doctor.id", index=True)
     patient_id: str = Field(foreign_key="patient.id", index=True)
-    appointment_datetime: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), nullable=False)
-    )
+
+    appointment_date: date
+    start_time: time
+    duration_minutes: int = Field(default=30, ge=5, le=240) # duration in minutes - exact 30 minutes
+
     status: AppointmentStatus = Field(
         sa_column=Column(SAEnum(AppointmentStatus), nullable=False, default=AppointmentStatus.scheduled)
     )
