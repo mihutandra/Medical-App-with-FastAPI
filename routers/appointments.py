@@ -17,6 +17,13 @@ class AppointmentCreate(SQLModel):
     start_time: time
     duration_minutes: Optional[int] = Field(default=30, ge=5, le=240)
     notes: Optional[str] = None
+    
+class AppointmentUpdate(SQLModel):
+    doctor_id: Optional[int] = None
+    appointment_date: Optional[date] = None
+    start_time: Optional[time] = None
+    duration_minutes: Optional[int] = Field(default=30, ge=5, le=240)
+    notes: Optional[str] = None
 
     # HH:MM only
     @staticmethod
@@ -157,6 +164,40 @@ def list_doctor_future_appointments(doctor_id: int):
         future.sort(key=lambda x: (x.appointment_date, x.start_time))
         return future
 
+@router.patch("/{appointment_id}", response_model=Appointment)
+def update_appointment(appointment_id: int, payload: AppointmentUpdate):
+    """Update an existing appointment and re-validate schedule + no-overlap."""
+    with Session(engine) as session:
+        appt = session.get(Appointment, appointment_id)
+        if not appt:
+            raise HTTPException(404, "Appointment not found")
+
+        new_doctor_id  = payload.doctor_id       if payload.doctor_id is not None       else appt.doctor_id
+        new_date       = payload.appointment_date if payload.appointment_date is not None else appt.appointment_date
+        new_notes      = payload.notes         if payload.notes is not None          else appt.notes
+        new_start      = payload.start_time      if payload.start_time is not None      else appt.start_time
+        new_duration   = payload.duration_minutes if payload.duration_minutes is not None else appt.duration_minutes
+        new_end        = _end_time(new_start, new_duration)
+
+        if not _fits_doctor_schedule(session, new_doctor_id, new_date, new_start, new_end):
+            raise HTTPException(status_code=422, detail="Appointment is outside doctor's schedule for that day")
+
+        if _overlaps_same_day(session, new_doctor_id, new_date, new_start, new_end, exclude_id=appointment_id):
+            raise HTTPException(status_code=409, detail="Appointment overlaps an existing booking")
+
+        # Persist changes
+        appt.doctor_id        = new_doctor_id
+        appt.appointment_date = new_date
+        appt.start_time       = new_start
+        appt.duration_minutes = new_duration
+        if payload.notes is not None:
+            appt.notes = payload.notes
+
+        session.add(appt)
+        session.commit()
+        session.refresh(appt)
+        return appt
+    
 @router.patch("/{appointment_id}/cancel", response_model=Appointment)
 def cancel_appointment(appointment_id: int):
     """Cancel a scheduled appointment by changing its status."""
@@ -171,3 +212,13 @@ def cancel_appointment(appointment_id: int):
         session.commit()
         session.refresh(appt)
         return appt
+    
+@router.delete("/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_appointment(appointment_id: int):
+    """Delete an appointment."""
+    with Session(engine) as session:
+        appt = session.get(Appointment, appointment_id)
+        if not appt:
+            raise HTTPException(404, "Appointment not found")
+        session.delete(appt)
+        session.commit()
