@@ -14,7 +14,6 @@ class ScheduleCreate(SQLModel):
     start_time: time
     end_time: time
 
-
 class ScheduleUpdate(SQLModel):
     weekday: Optional[int] = Field(default=None, ge=0, le=6)
     start_time: Optional[time] = None
@@ -106,4 +105,28 @@ def create_schedule(doctor_id: int, payload: ScheduleCreate):
         session.refresh(sch)
         return sch
 
-    
+@router.patch(
+    "/{doctor_id}/schedules", response_model=DoctorSchedule, status_code=status.HTTP_200_OK)
+def update_schedule(doctor_id:int, payload:ScheduleUpdate):
+    """Partial update of a doctor's schedule slot."""
+    with Session(engine) as session:
+        doctor_or_404(session, doctor_id)
+        sch = session.exec(
+            select(DoctorSchedule).where(DoctorSchedule.doctor_id == doctor_id)
+        ).first()
+
+
+        new_weekday    = payload.weekday    if payload.weekday is not None    else sch.weekday
+        new_start_time = payload.start_time if payload.start_time is not None else sch.start_time
+        new_end_time   = payload.end_time   if payload.end_time is not None   else sch.end_time
+
+        validate_time(new_start_time, new_end_time)
+
+        sch.weekday    = new_weekday
+        sch.start_time = new_start_time
+        sch.end_time   = new_end_time
+
+        session.add(sch)
+        session.commit()
+        session.refresh(sch)
+        return sch
