@@ -126,7 +126,7 @@ def create_appointment(payload: AppointmentCreate):
 
 
 
-@router.get("/patients/{patient_id}")
+@router.get("/patients/{patient_id}", status_code=status.HTTP_200_OK)
 def list_patient_appointments(patient_id: str):
     """List past 90 days and future appointments for a patient."""
     
@@ -150,7 +150,7 @@ def list_patient_appointments(patient_id: str):
         future.sort(key=lambda x: (x.appointment_date, x.start_time))
         return {"past_90_days": past_90, "future": future}
 
-@router.get("/doctors/{doctor_id}", response_model=list[Appointment])
+@router.get("/doctors/{doctor_id}", response_model=list[Appointment], status_code=status.HTTP_200_OK)
 def list_doctor_future_appointments(doctor_id: int):
     """List future appointments for a doctor."""
     
@@ -164,7 +164,7 @@ def list_doctor_future_appointments(doctor_id: int):
         future.sort(key=lambda x: (x.appointment_date, x.start_time))
         return future
 
-@router.patch("/{appointment_id}", response_model=Appointment)
+@router.patch("/{appointment_id}", response_model=Appointment, status_code=status.HTTP_202_ACCEPTED)
 def update_appointment(appointment_id: int, payload: AppointmentUpdate):
     """Update an existing appointment and re-validate schedule + no-overlap."""
     with Session(engine) as session:
@@ -198,7 +198,7 @@ def update_appointment(appointment_id: int, payload: AppointmentUpdate):
         session.refresh(appt)
         return appt
     
-@router.patch("/{appointment_id}/cancel", response_model=Appointment)
+@router.patch("/{appointment_id}/cancel", response_model=Appointment, status_code=status.HTTP_202_ACCEPTED)
 def cancel_appointment(appointment_id: int):
     """Cancel a scheduled appointment by changing its status."""
     with Session(engine) as session:

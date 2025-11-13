@@ -20,7 +20,7 @@ class DoctorUpdate(SQLModel):
     price_per_consultation: Optional[Decimal] = None
 
 
-@router.post("/", response_model=Doctor)
+@router.post("/", response_model=Doctor, status_code=status.HTTP_201_CREATED)
 def create_doctor(doctor: Doctor):
     with Session(engine) as session:
         session.add(doctor)
@@ -28,7 +28,7 @@ def create_doctor(doctor: Doctor):
         session.refresh(doctor)
         return doctor
 
-@router.get("/", response_model=list[Doctor])
+@router.get("/", response_model=list[Doctor], status_code=status.HTTP_200_OK)
 def get_doctors():
     with Session(engine) as session:
         doctors = session.exec(select(Doctor)).all()
@@ -43,7 +43,7 @@ def get_doctors_by_id(doctor_id: int):
         return doctors
 
 
-@router.get("/{doctor_specialty}")
+@router.get("/{doctor_specialty}", status_code=status.HTTP_200_OK)
 def get_doctors_by_specialty(doctor_specialty: str):
     with Session(engine) as session:
         doctors = session.exec(
@@ -52,7 +52,7 @@ def get_doctors_by_specialty(doctor_specialty: str):
         return doctors
 
 
-@router.patch("/{doctor_id}", response_model=Doctor, status_code=status.HTTP_200_OK)
+@router.patch("/{doctor_id}", response_model=Doctor, status_code=status.HTTP_202_ACCEPTED)
 def update_doctor(doctor_id: int, payload: DoctorUpdate):
     """
     Partial update. Only updates fields provided in the payload.
@@ -78,7 +78,7 @@ def update_doctor(doctor_id: int, payload: DoctorUpdate):
         session.refresh(doc)
         return doc
 
-@router.put("/{doctor_id}", response_model=Doctor, status_code=status.HTTP_200_OK)
+@router.put("/{doctor_id}", response_model=Doctor, status_code=status.HTTP_202_ACCEPTED)
 def replace_doctor(doctor_id: int, replacement: Doctor) -> Doctor:
     """
     Full update. Replaces all updatable fields of the existing doctor with the values from `replacement`.
@@ -114,7 +114,7 @@ def delete_doctor(doctor_id: int) -> None:
         future_appointments=session.exec(
             select(Appointment).where(
                 (Appointment.doctor_id == doctor_id) &
-                (Appointment.appointment_datetime > datetime.now(timezone.utc)) &
+                (Appointment.start_time > datetime.now(timezone.utc)) &
                 (Appointment.status == AppointmentStatus.scheduled)
             )
         )

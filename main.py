@@ -10,10 +10,6 @@ medical_app = FastAPI()
 medical_app.title = "Medical Appointment Scheduling API"
 
 
-@medical_app.on_event("startup")
-def on_startup():
-    create_db_and_tables()
-
 medical_app.include_router(doctors.router)
 medical_app.include_router(patients.router)
 medical_app.include_router(schedules.router)

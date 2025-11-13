@@ -66,7 +66,7 @@ def schedule_overlap(
 
     return session.exec(q).first() is not None
 
-@router.get("/{doctor_id}/schedules", response_model=list[ScheduleOut])
+@router.get("/{doctor_id}/schedules", response_model=list[ScheduleOut], status_code=status.HTTP_200_OK)
 def get_doctor_schedules(doctor_id:int):
     with Session(engine) as session:
         doctor = doctor_or_404(session, doctor_id)
@@ -106,7 +106,7 @@ def create_schedule(doctor_id: int, payload: ScheduleCreate):
         return sch
 
 @router.patch(
-    "/{doctor_id}/schedules", response_model=DoctorSchedule, status_code=status.HTTP_200_OK)
+    "/{doctor_id}/schedules", response_model=DoctorSchedule, status_code=status.HTTP_202_ACCEPTED)
 def update_schedule(doctor_id:int, payload:ScheduleUpdate):
     """Partial update of a doctor's schedule slot."""
     with Session(engine) as session:
@@ -123,7 +123,7 @@ def update_schedule(doctor_id:int, payload:ScheduleUpdate):
         validate_time(new_start_time, new_end_time)
 
         sch.weekday    = new_weekday
-        sch.start_time = new_start_time
+        sch.start_time = new_start_time 
         sch.end_time   = new_end_time
 
         session.add(sch)

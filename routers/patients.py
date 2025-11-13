@@ -22,13 +22,13 @@ def create_patient(patient: Patient):
         session.refresh(patient)
         return patient
 
-@router.get("/", response_model=list[Patient])
+@router.get("/", response_model=list[Patient], status_code=status.HTTP_201_CREATED)
 def get_patients():
     with Session(engine) as session:
         patients = session.exec(select(Patient)).all()
         return patients
 
-@router.get("/{patient_id}", response_model=Patient)
+@router.get("/{patient_id}", response_model=Patient, status_code=status.HTTP_200_OK)
 def get_patient_by_id(patient_id: int):
     with Session(engine) as session:
         patient = session.get(Patient, patient_id)
@@ -36,7 +36,7 @@ def get_patient_by_id(patient_id: int):
             raise HTTPException(status_code=404, detail="Patient not found")
         return patient
 
-@router.patch("/{patient_id}", response_model=Patient)
+@router.patch("/{patient_id}", response_model=Patient, status_code=status.HTTP_202_ACCEPTED)
 def update_patient(patient_id: int, payload: PatientUpdate):
     """
     Partial update. Only updates fields provided in the payload.
