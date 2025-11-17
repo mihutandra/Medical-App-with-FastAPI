@@ -7,7 +7,7 @@ from sqlmodel import SQLModel, Field, Session, select
 
 from db.session import engine
 from models.models import Doctor, DoctorSchedule
-router = APIRouter(prefix="/doctors", tags=["Schedules"])
+router = APIRouter(prefix="/schedules", tags=["Schedules"])
 
 class ScheduleCreate(SQLModel):
     weekday: int = Field(ge=0, le=6, description="0=Mon ... 6=Sun")
@@ -66,7 +66,7 @@ def schedule_overlap(
 
     return session.exec(q).first() is not None
 
-@router.get("/{doctor_id}/schedules", response_model=list[ScheduleOut], status_code=status.HTTP_200_OK)
+@router.get("/doctors/{doctor_id}", response_model=list[ScheduleOut], status_code=status.HTTP_200_OK)
 def get_doctor_schedules(doctor_id:int):
     with Session(engine) as session:
         doctor = doctor_or_404(session, doctor_id)
@@ -82,7 +82,7 @@ def get_doctor_schedules(doctor_id:int):
         return result
     
 @router.post(
-    "/{doctor_id}/schedules",
+    "/doctors/{doctor_id}",
     response_model=DoctorSchedule,
     status_code=status.HTTP_201_CREATED,
 )
@@ -106,7 +106,7 @@ def create_schedule(doctor_id: int, payload: ScheduleCreate):
         return sch
 
 @router.patch(
-    "/{doctor_id}/schedules", response_model=DoctorSchedule, status_code=status.HTTP_202_ACCEPTED)
+    "/doctors/{doctor_id}", response_model=DoctorSchedule, status_code=status.HTTP_202_ACCEPTED)
 def update_schedule(doctor_id:int, payload:ScheduleUpdate):
     """Partial update of a doctor's schedule slot."""
     with Session(engine) as session:
@@ -130,3 +130,18 @@ def update_schedule(doctor_id:int, payload:ScheduleUpdate):
         session.commit()
         session.refresh(sch)
         return sch
+    
+@router.delete(
+    "/doctors/{doctor_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_schedule(doctor_id:int) -> None:
+    """Delete a doctor's schedule slot."""
+    with Session(engine) as session:
+        doctor_or_404(session, doctor_id)
+        sch = session.exec(
+            select(DoctorSchedule).where(DoctorSchedule.doctor_id == doctor_id)
+        ).first()
+        if not sch:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        session.delete(sch)
+        session.commit()
+        return None

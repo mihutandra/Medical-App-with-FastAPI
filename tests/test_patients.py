@@ -1,9 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import medical_app
-from db import session as db_session
-from db.session import engine, create_db_and_tables 
-from sqlmodel import Session, select
+from db.session import engine
+from sqlmodel import Session
 from models.models import Patient
 
 @pytest.fixture()
