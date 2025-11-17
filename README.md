@@ -17,8 +17,6 @@ Built with **FastAPI**, **SQLModel**, and **SQLite/MySQL**, featuring data valid
 * [Data Models](#data-models)
 * [Testing](#testing)
 * [Contributing](#contributing)
-* [License](#license)
-
 ---
 
 ## 🚀 Overview
