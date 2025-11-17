@@ -34,7 +34,7 @@ def get_doctors():
         doctors = session.exec(select(Doctor)).all()
         return doctors
     
-@router.get("/{doctor_id}")
+@router.get("/{doctor_id}", status_code=status.HTTP_200_OK)
 def get_doctors_by_id(doctor_id: int):
     with Session(engine) as session:
         doctors = session.exec(
