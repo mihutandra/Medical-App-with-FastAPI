@@ -43,7 +43,7 @@ def get_doctors_by_id(doctor_id: int):
         return doctors
 
 
-@router.get("/{doctor_specialty}", status_code=status.HTTP_200_OK)
+@router.get("/specialty/{doctor_specialty}", status_code=status.HTTP_200_OK)
 def get_doctors_by_specialty(doctor_specialty: str):
     with Session(engine) as session:
         doctors = session.exec(

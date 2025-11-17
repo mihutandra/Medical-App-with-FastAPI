@@ -14,7 +14,7 @@ class PatientUpdate(SQLModel):
     phone: Optional[str] = None 
     email: Optional[str] = None
 
-@router.post("/", response_model=Patient)
+@router.post("/", response_model=Patient, status_code=status.HTTP_201_CREATED)
 def create_patient(patient: Patient):
     with Session(engine) as session:
         session.add(patient)
@@ -22,7 +22,7 @@ def create_patient(patient: Patient):
         session.refresh(patient)
         return patient
 
-@router.get("/", response_model=list[Patient], status_code=status.HTTP_201_CREATED)
+@router.get("/", response_model=list[Patient], status_code=status.HTTP_200_OK)
 def get_patients():
     with Session(engine) as session:
         patients = session.exec(select(Patient)).all()
@@ -60,7 +60,7 @@ def update_patient(patient_id: int, payload: PatientUpdate):
         session.refresh(patient)
         return patient
         
-@router.put("/{patient}", response_model=Patient, status_code=status.HTTP_200_OK)
+@router.put("/{patient_id}", response_model=Patient, status_code=status.HTTP_202_ACCEPTED)
 def replace_patient(patient_id: int, replacement: Patient) -> Patient:
     """
     Full update. Replaces all updatable fields of the existing patient
@@ -84,8 +84,8 @@ def replace_patient(patient_id: int, replacement: Patient) -> Patient:
 
 @router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
 def soft_delete_patient(patient_id: int) -> None:
-    """Soft delete: mark is_active=False, keep history."""
-    with Session(engine) as session:
+    """Soft delete: mark is_active=False, keep history. """
+    with Session(engine) as session: 
         pat = session.get(Patient, patient_id)
         if not pat:
             raise HTTPException(status_code=404, detail="Patient not found")
@@ -96,8 +96,7 @@ def soft_delete_patient(patient_id: int) -> None:
         session.commit()
         return None
 
-
-@router.post("/{patient_id}/restore", response_model=Patient)
+@router.post("/{patient_id}/restore", response_model=Patient, status_code=status.HTTP_200_OK)
 def restore_patient(patient_id: int):
     """Restore a soft-deleted patient (is_active=True)."""
     with Session(engine) as session:
